@@ -1,0 +1,1386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Guitar Scales Explorer & Masterclass</title>
+    <style>
+        :root {
+            --bg-dark: #090d16;
+            --bg-card: #131b2e;
+            --bg-card-hover: #1c2842;
+            --border-color: #2a3b5c;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            
+            --color-root: #ef4444;       /* Vibrant Red */
+            --color-sec3: #f59e0b;       /* Amber/Gold (3rds) */
+            --color-fifth: #10b981;      /* Emerald Green (5ths) */
+            --color-blue-note: #38bdf8;  /* Sky Blue (Blue notes / #4 / b5) */
+            --color-char: #a855f7;       /* Purple (Characteristic modal notes) */
+            --color-gen: #64748b;        /* Neutral Slate (Other scale degrees) */
+            
+            --fret-wire: #64748b;
+            --wood-dark: #0f172a;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Navigation Header */
+        .app-navbar {
+            background-color: #060a12;
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            height: 60px;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 800;
+            font-size: 1.15rem;
+            background: linear-gradient(90deg, #ef4444, #38bdf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 8px;
+            height: 100%;
+        }
+
+        .nav-tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 0 16px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s ease;
+            height: 100%;
+        }
+
+        .nav-tab-btn:hover {
+            color: var(--text-main);
+            background-color: rgba(255,255,255,0.03);
+        }
+
+        .nav-tab-btn.active {
+            color: #38bdf8;
+            border-bottom-color: #38bdf8;
+            background-color: rgba(56, 189, 248, 0.05);
+        }
+
+        /* Pages */
+        .view-page {
+            display: none;
+            padding: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+            flex: 1;
+        }
+
+        .view-page.active-view {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Controls Panel */
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 16px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .control-group label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        select, input[type="range"] {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            outline: none;
+            cursor: pointer;
+        }
+
+        select:focus {
+            border-color: #38bdf8;
+        }
+
+        button {
+            background-color: #0284c7;
+            color: #ffffff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        button:hover {
+            background-color: #0369a1;
+            transform: translateY(-1px);
+        }
+
+        button.btn-secondary {
+            background-color: var(--bg-dark);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+        }
+
+        button.btn-secondary:hover {
+            background-color: var(--bg-card-hover);
+        }
+
+        /* Fretboard Visualizer */
+        .fretboard-wrapper {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 16px;
+            overflow-x: auto;
+        }
+
+        .fretboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .legend-bar {
+            display: flex;
+            gap: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .fretboard-container {
+            min-width: 1300px;
+            display: flex;
+            flex-direction: column;
+            user-select: none;
+        }
+
+        .fret-numbers {
+            display: flex;
+            padding-left: 40px;
+            margin-bottom: 6px;
+            font-family: monospace;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .fret-number-cell {
+            flex: 1;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .fret-number-cell.nut {
+            width: 40px;
+            flex: none;
+        }
+
+        .neck {
+            position: relative;
+            background-color: var(--wood-dark);
+            border-top: 3px solid var(--fret-wire);
+            border-bottom: 3px solid var(--fret-wire);
+            border-radius: 4px;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.8);
+        }
+
+        .strings-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            z-index: 2;
+        }
+
+        .string-row {
+            display: flex;
+            align-items: center;
+            height: 38px;
+            position: relative;
+        }
+
+        .string-wire {
+            position: absolute;
+            left: 40px;
+            right: 0;
+            background: linear-gradient(0deg, #94a3b8, #cbd5e1);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .tuning-label {
+            width: 40px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: #f1f5f9;
+            background-color: #060a12;
+            border-right: 4px solid var(--color-fifth);
+            z-index: 3;
+        }
+
+        .fret-cell {
+            flex: 1;
+            height: 100%;
+            border-right: 2px solid var(--fret-wire);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+        }
+
+        .fret-cell.nut-cell {
+            width: 40px;
+            flex: none;
+            background-color: rgba(255,255,255,0.03);
+            border-right: 4px solid var(--color-fifth);
+        }
+
+        .fret-cell.dimmed .note-badge {
+            opacity: 0.2;
+            transform: scale(0.85);
+        }
+
+        .inlay-layer {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 40px;
+            right: 0;
+            pointer-events: none;
+            z-index: 1;
+            display: flex;
+        }
+
+        .inlay-cell {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .inlay-dot {
+            width: 9px;
+            height: 9px;
+            background-color: rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+        }
+
+        .inlay-double {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .note-badge {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            font-family: monospace;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.6);
+            transition: all 0.15s ease;
+            z-index: 4;
+            border: 1px solid rgba(255,255,255,0.4);
+            color: #ffffff;
+        }
+
+        .note-badge:hover {
+            transform: scale(1.25) !important;
+            opacity: 1 !important;
+            z-index: 10;
+        }
+
+        /* Summary Cards */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .info-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .info-card-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+        }
+
+        .info-card-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-main);
+            font-family: monospace;
+        }
+
+        .info-card-desc {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        /* PAGE 2: TUTORIAL STYLING */
+        .tutorial-container {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            gap: 25px;
+            align-items: start;
+        }
+
+        @media (max-width: 900px) {
+            .tutorial-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .tutorial-sidebar {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            position: sticky;
+            top: 80px;
+        }
+
+        .toc-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .toc-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            padding: 6px 10px;
+            border-radius: 6px;
+            display: block;
+            transition: all 0.2s ease;
+        }
+
+        .toc-link:hover {
+            color: var(--text-main);
+            background-color: var(--bg-card-hover);
+        }
+
+        .tutorial-content {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .tutorial-section {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            scroll-margin-top: 80px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+        }
+
+        .section-num {
+            background: linear-gradient(135deg, #ef4444, #38bdf8);
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .section-title {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .tutorial-text {
+            color: #cbd5e1;
+            line-height: 1.75;
+            font-size: 0.95rem;
+        }
+
+        .formula-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            margin: 10px 0;
+        }
+
+        .formula-table th, .formula-table td {
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
+            text-align: left;
+        }
+
+        .formula-table th {
+            background-color: #060a12;
+            color: #38bdf8;
+        }
+
+        .riff-box {
+            background-color: #060a12;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .tab-display {
+            font-family: monospace;
+            white-space: pre;
+            background-color: #030712;
+            color: #38bdf8;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #1e293b;
+            font-size: 0.85rem;
+            overflow-x: auto;
+            line-height: 1.3;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- App Navigation Header -->
+    <nav class="app-navbar">
+        <div class="nav-brand">
+            <span>🎸</span> Interactive Guitar Scales Suite
+        </div>
+        <div class="nav-tabs">
+            <button class="nav-tab-btn active" id="tab-visualizer" onclick="switchTab('visualizer')">
+                <span>🎛️</span> Interactive Visualizer
+            </button>
+            <button class="nav-tab-btn" id="tab-masterclass" onclick="switchTab('masterclass')">
+                <span>📚</span> Scale & Riff Masterclass
+            </button>
+        </div>
+    </nav>
+
+    <!-- PAGE 1: INTERACTIVE EXPLORER -->
+    <main id="page-visualizer" class="view-page active-view">
+        
+        <!-- Controls Grid -->
+        <div class="controls-grid">
+            <div class="control-group">
+                <label for="select-root">Root Key</label>
+                <select id="select-root"></select>
+            </div>
+
+            <div class="control-group">
+                <label for="select-scale">Scale / Mode</label>
+                <select id="select-scale"></select>
+            </div>
+
+            <div class="control-group">
+                <label for="select-display">Display Mode</label>
+                <select id="select-display">
+                    <option value="notes">Note Names (C, D, E)</option>
+                    <option value="degrees">Scale Degrees (R, b3, 5)</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="select-position">CAGED / Position Focus</label>
+                <select id="select-position">
+                    <option value="all">Full Fretboard (All Frets)</option>
+                    <option value="pos1">Position 1 (Frets 0-4)</option>
+                    <option value="pos2">Position 2 (Frets 3-7)</option>
+                    <option value="pos3">Position 3 (Frets 5-9)</option>
+                    <option value="pos4">Position 4 (Frets 7-11)</option>
+                    <option value="pos5">Position 5 (Frets 10-14)</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>Audio Controls</label>
+                <div style="display: flex; gap: 8px;">
+                    <button id="btn-play-scale" style="flex: 1;">▶ Scale</button>
+                    <button id="btn-play-arp" class="btn-secondary" style="flex: 1;">📈 Arp</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label id="lbl-bpm">Tempo: 120 BPM</label>
+                <input type="range" id="tempo-slider" min="60" max="240" value="120" style="accent-color: #38bdf8;">
+            </div>
+        </div>
+
+        <!-- Fretboard Visualizer Panel -->
+        <div class="fretboard-wrapper">
+            <div class="fretboard-header">
+                <span id="fretboard-title" style="font-weight: 700; font-size: 1rem; color: var(--text-main);"></span>
+                <div class="legend-bar">
+                    <div class="legend-item"><div class="legend-dot" style="background-color: var(--color-root);"></div> Root (R)</div>
+                    <div class="legend-item"><div class="legend-dot" style="background-color: var(--color-sec3);"></div> Third (3 / b3)</div>
+                    <div class="legend-item"><div class="legend-dot" style="background-color: var(--color-fifth);"></div> Fifth (5 / b5)</div>
+                    <div class="legend-item"><div class="legend-dot" style="background-color: var(--color-blue-note);"></div> Blue Note / Alt</div>
+                    <div class="legend-item"><div class="legend-dot" style="background-color: var(--color-char);"></div> Modal Tone</div>
+                </div>
+            </div>
+
+            <div class="fretboard-container">
+                <div class="fret-numbers" id="fret-numbers"></div>
+                <div class="neck">
+                    <div class="inlay-layer" id="inlay-layer"></div>
+                    <div class="strings-container" id="strings-container"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Information Cards -->
+        <div class="info-grid">
+            <div class="info-card">
+                <span class="info-card-title">Scale Formula & Intervals</span>
+                <span class="info-card-value" id="info-formula">--</span>
+                <p class="info-card-desc" id="info-notes">Notes: --</p>
+            </div>
+            <div class="info-card">
+                <span class="info-card-title">Tonal Character & Mood</span>
+                <span class="info-card-value" id="info-mood">--</span>
+                <p class="info-card-desc" id="info-usage">--</p>
+            </div>
+            <div class="info-card">
+                <span class="info-card-title">Characteristic Interval</span>
+                <span class="info-card-value" id="info-char-note">--</span>
+                <p class="info-card-desc" id="info-char-desc">--</p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- PAGE 2: MASTERCLASS TUTORIAL -->
+    <main id="page-masterclass" class="view-page">
+        <div class="tutorial-container">
+            
+            <!-- Sidebar Index -->
+            <aside class="tutorial-sidebar">
+                <div style="font-size: 0.85rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+                    Masterclass Guide
+                </div>
+                <ul class="toc-list">
+                    <li><a href="#m-sec-1" class="toc-link">1. Major & Minor Scale Formulas</a></li>
+                    <li><a href="#m-sec-2" class="toc-link">2. Brightness Spectrum of Modes</a></li>
+                    <li><a href="#m-sec-3" class="toc-link">3. CAGED vs. 3NPS Systems</a></li>
+                    <li><a href="#m-sec-4" class="toc-link">4. Famous Riffs Deconstructed</a></li>
+                    <li><a href="#m-sec-5" class="toc-link">5. Speed & Precision Drills</a></li>
+                </ul>
+            </aside>
+
+            <!-- Content Area -->
+            <div class="tutorial-content">
+
+                <!-- Section 1 -->
+                <section id="m-sec-1" class="tutorial-section">
+                    <div class="section-header">
+                        <div class="section-num">1</div>
+                        <h2 class="section-title">Anatomy of Major & Minor Scale Families</h2>
+                    </div>
+                    <p class="tutorial-text">
+                        All Western musical scales are constructed using specific sequences of Whole-steps (W = 2 frets) and Half-steps (H = 1 fret) from a root note.
+                    </p>
+                    <table class="formula-table">
+                        <thead>
+                            <tr>
+                                <th>Scale / Mode</th>
+                                <th>Step Formula</th>
+                                <th>Interval Structure</th>
+                                <th>Key Quality</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Major (Ionian)</strong></td>
+                                <td>W - W - H - W - W - W - H</td>
+                                <td>1 - 2 - 3 - 4 - 5 - 6 - 7</td>
+                                <td>Bright, Triumphant, Standard Major</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Natural Minor (Aeolian)</strong></td>
+                                <td>W - H - W - W - H - W - W</td>
+                                <td>1 - 2 - b3 - 4 - 5 - b6 - b7</td>
+                                <td>Sad, Melancholic, Standard Minor</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Harmonic Minor</strong></td>
+                                <td>W - H - W - W - H - 1.5W - H</td>
+                                <td>1 - 2 - b3 - 4 - 5 - b6 - 7</td>
+                                <td>Exotic, Neoclassical, Spanish</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Melodic Minor (Jazz)</strong></td>
+                                <td>W - H - W - W - W - W - H</td>
+                                <td>1 - 2 - b3 - 4 - 5 - 6 - 7</td>
+                                <td>Sophisticated, Modern Jazz</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Minor Pentatonic</strong></td>
+                                <td>1.5W - W - W - 1.5W - W</td>
+                                <td>1 - b3 - 4 - 5 - b7</td>
+                                <td>Blues, Rock, Universal Lead</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="m-sec-2" class="tutorial-section">
+                    <div class="section-header">
+                        <div class="section-num">2</div>
+                        <h2 class="section-title">The Bright-to-Dark Spectrum of Modes</h2>
+                    </div>
+                    <p class="tutorial-text">
+                        The 7 diatonic modes derived from the Major scale can be arranged in order from <strong>Brightest</strong> (most raised intervals) to <strong>Darkest</strong> (most lowered/flatted intervals):
+                    </p>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 10px;">
+                        <div style="background:#060a12; padding:12px; border-radius:6px; border:1px solid #eab308;">
+                            <strong style="color:#eab308;">1. Lydian (Brightest)</strong>
+                            <p style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">Formula: 1 2 3 #4 5 6 7. Dreamy, cinematic, raised 4th.</p>
+                        </div>
+                        <div style="background:#060a12; padding:12px; border-radius:6px; border:1px solid #38bdf8;">
+                            <strong style="color:#38bdf8;">2. Ionian (Major)</strong>
+                            <p style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">Formula: 1 2 3 4 5 6 7. Pure, stable, resolved.</p>
+                        </div>
+                        <div style="background:#060a12; padding:12px; border-radius:6px; border:1px solid #10b981;">
+                            <strong style="color:#10b981;">3. Mixolydian</strong>
+                            <p style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">Formula: 1 2 3 4 5 6 b7. Bluesy major, southern rock.</p>
+                        </div>
+                        <div style="background:#060a12; padding:12px; border-radius:6px; border:1px solid #a855f7;">
+                            <strong style="color:#a855f7;">4. Dorian</strong>
+                            <p style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">Formula: 1 2 b3 4 5 6 b7. Jazzy, funky minor with major 6th.</p>
+                        </div>
+                        <div style="background:#060a12; padding:12px; border-radius:6px; border:1px solid #f97316;">
+                            <strong style="color:#f97316;">5. Aeolian (Minor)</strong>
+                            <p style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">Formula: 1 2 b3 4 5 b6 b7. Emotional, heavy, natural minor.</p>
+                        </div>
+                        <div style="background:#060a12; padding:12px; border-radius:6px; border:1px solid #ef4444;">
+                            <strong style="color:#ef4444;">6. Phrygian</strong>
+                            <p style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">Formula: 1 b2 b3 4 5 b6 b7. Dark, Spanish, metal b2 interval.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="m-sec-3" class="tutorial-section">
+                    <div class="section-header">
+                        <div class="section-num">3</div>
+                        <h2 class="section-title">CAGED vs. 3-Notes-Per-String (3NPS) Systems</h2>
+                    </div>
+                    <p class="tutorial-text">
+                        Two primary frameworks exist for navigating scales across the guitar fretboard:
+                    </p>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div class="riff-box">
+                            <strong style="color:#38bdf8;">The CAGED System</strong>
+                            <p class="tutorial-text" style="font-size:0.85rem;">
+                                Maps scale shapes directly over open chord shapes (C, A, G, E, D). Box shapes stay within a 4-5 fret span, making it ideal for blues, chord-melody, and localized bending.
+                            </p>
+                        </div>
+                        <div class="riff-box">
+                            <strong style="color:#a855f7;">3-Notes-Per-String (3NPS)</strong>
+                            <p class="tutorial-text" style="font-size:0.85rem;">
+                                Strict consistency: exactly 3 notes are played on every string. This creates symmetrical picking patterns, making it superior for high-speed legato, alternate picking, and sweeping across the neck.
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="m-sec-4" class="tutorial-section">
+                    <div class="section-header">
+                        <div class="section-num">4</div>
+                        <h2 class="section-title">Famous Riffs & Solos Deconstructed (With Audio)</h2>
+                    </div>
+
+                    <!-- Riff 1 -->
+                    <div class="riff-box">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                            <div>
+                                <strong style="color:#38bdf8; font-size:1.05rem;">1. Blues-Rock Lick (A Minor Pentatonic / Blues Scale)</strong>
+                                <p style="font-size:0.8rem; color:var(--text-muted);">Inspired by Led Zeppelin & Jimi Hendrix classic blues bends.</p>
+                            </div>
+                            <button onclick="playRiff('blues')">▶ Play Riff</button>
+                        </div>
+                        <div class="tab-display">
+e|-------------------5-------------------|
+B|-------------5--8----8p5---------------|
+G|-------5--7b9------------7p5---7~------|
+D|--7~-------------------------7---------|
+A|---------------------------------------|
+E|---------------------------------------|
+                        </div>
+                    </div>
+
+                    <!-- Riff 2 -->
+                    <div class="riff-box">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                            <div>
+                                <strong style="color:#a855f7; font-size:1.05rem;">2. Funky Latin Groove (A Dorian Mode)</strong>
+                                <p style="font-size:0.8rem; color:var(--text-muted);">Features the major 6th (F#) against A minor chord, Carlos Santana style.</p>
+                            </div>
+                            <button onclick="playRiff('dorian')">▶ Play Riff</button>
+                        </div>
+                        <div class="tab-display">
+e|---------------------------------------|
+B|--10--8--------------------------------|
+G|---------9--7h8p7\5----7--5------------|
+D|--------------------7-------7--4h5p4---|
+A|-------------------------------------7-|
+E|---------------------------------------|
+                        </div>
+                    </div>
+
+                    <!-- Riff 3 -->
+                    <div class="riff-box">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                            <div>
+                                <strong style="color:#ef4444; font-size:1.05rem;">3. Neoclassical Shred Lick (A Harmonic Minor / Phrygian Dominant)</strong>
+                                <p style="font-size:0.8rem; color:var(--text-muted);">Features the major 7th leading tone (G#) Yngwie Malmsteen style.</p>
+                            </div>
+                            <button onclick="playRiff('harmonic')">▶ Play Riff</button>
+                        </div>
+                        <div class="tab-display">
+e|--12p8----8-13p8----8-12p8----8-10p7---7-|
+B|-------10--------10--------10--------9---|
+G|-----------------------------------------|
+D|-----------------------------------------|
+A|-----------------------------------------|
+E|-----------------------------------------|
+                        </div>
+                    </div>
+
+                    <!-- Riff 4 -->
+                    <div class="riff-box">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                            <div>
+                                <strong style="color:#10b981; font-size:1.05rem;">4. Country Sweet-Box Bend (G Major Pentatonic)</strong>
+                                <p style="font-size:0.8rem; color:var(--text-muted);">Sweet major pentatonic bends, BB King & Southern Rock style.</p>
+                            </div>
+                            <button onclick="playRiff('major_pent')">▶ Play Riff</button>
+                        </div>
+                        <div class="tab-display">
+e|--------------------12-------------------|
+B|-------------10--12----12b14--12--10~----|
+G|-------9--11-----------------------------|
+D|--12~------------------------------------|
+A|-----------------------------------------|
+E|-----------------------------------------|
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="m-sec-5" class="tutorial-section">
+                    <div class="section-header">
+                        <div class="section-num">5</div>
+                        <h2 class="section-title">Speed & Technique Practice Routines</h2>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:12px;">
+                        <div style="background:#060a12; padding:12px; border-radius:6px; border:1px solid var(--border-color);">
+                            <strong style="color:var(--text-main);">Drill 1: Groups of 4 Sequence</strong>
+                            <p style="font-size:0.85rem; color:var(--text-muted); margin-top:4px;">
+                                Play notes 1-2-3-4, then starting from note 2 play 2-3-4-5, then 3-4-5-6 up the scale. Builds alternate picking speed and finger independence.
+                            </p>
+                        </div>
+                        <div style="background:#060a12; padding:12px; border-radius:6px; border:1px solid var(--border-color);">
+                            <strong style="color:var(--text-main);">Drill 2: String Skipping Arpeggiations</strong>
+                            <p style="font-size:0.85rem; color:var(--text-muted); margin-top:4px;">
+                                Play the scale notes on String 6, skip String 5 to play String 4, then String 5 to String 3. Develops precise pick targeting.
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+    </main>
+
+    <script>
+        /**
+         * MUSIC THEORY DATA & ENGINE
+         */
+        const KEYS = [
+            { name: 'C', pitch: 0 },
+            { name: 'C# / Db', pitch: 1 },
+            { name: 'D', pitch: 2 },
+            { name: 'D# / Eb', pitch: 3 },
+            { name: 'E', pitch: 4 },
+            { name: 'F', pitch: 5 },
+            { name: 'F# / Gb', pitch: 6 },
+            { name: 'G', pitch: 7 },
+            { name: 'G# / Ab', pitch: 8 },
+            { name: 'A', pitch: 9 },
+            { name: 'A# / Bb', pitch: 10 },
+            { name: 'B', pitch: 11 }
+        ];
+
+        const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+        const SCALES = {
+            'ionian': {
+                name: 'Major (Ionian)',
+                intervals: [0, 2, 4, 5, 7, 9, 11],
+                degrees: ['R', '2', '3', '4', '5', '6', '7'],
+                formula: '1 - 2 - 3 - 4 - 5 - 6 - 7',
+                mood: 'Bright, Happy, Direct',
+                usage: 'Foundational major scale for pop, rock, and classical.',
+                charDegree: '3',
+                charDesc: 'Major 3rd gives its fundamental bright tonality.'
+            },
+            'dorian': {
+                name: 'Dorian Mode',
+                intervals: [0, 2, 3, 5, 7, 9, 10],
+                degrees: ['R', '2', 'b3', '4', '5', '6', 'b7'],
+                formula: '1 - 2 - b3 - 4 - 5 - 6 - b7',
+                mood: 'Jazzy, Funky, Sophisticated Minor',
+                usage: 'Used heavily in Funk, Jazz, and Latin Rock (Santana).',
+                charDegree: '6',
+                charDesc: 'Major 6th softens the minor sadness, giving a funky feel.'
+            },
+            'phrygian': {
+                name: 'Phrygian Mode',
+                intervals: [0, 1, 3, 5, 7, 8, 10],
+                degrees: ['R', 'b2', 'b3', '4', '5', 'b6', 'b7'],
+                formula: '1 - b2 - b3 - 4 - 5 - b6 - b7',
+                mood: 'Dark, Spanish, Aggressive',
+                usage: 'Heavy Metal, Flamenco, and Thrash riffs.',
+                charDegree: 'b2',
+                charDesc: 'Minor 2nd creates instant tension and exotic darkness.'
+            },
+            'lydian': {
+                name: 'Lydian Mode',
+                intervals: [0, 2, 4, 6, 7, 9, 11],
+                degrees: ['R', '2', '3', '#4', '5', '6', '7'],
+                formula: '1 - 2 - 3 - #4 - 5 - 6 - 7',
+                mood: 'Dreamy, Ethereal, Futuristic',
+                usage: 'Film scores (Sci-Fi/Fantasy), Joe Satriani style shred.',
+                charDegree: '#4',
+                charDesc: 'Augmented 4th lifts the major sound into floating space.'
+            },
+            'mixolydian': {
+                name: 'Mixolydian Mode',
+                intervals: [0, 2, 4, 5, 7, 9, 10],
+                degrees: ['R', '2', '3', '4', '5', '6', 'b7'],
+                formula: '1 - 2 - 3 - 4 - 5 - 6 - b7',
+                mood: 'Bluesy Major, Southern Rock',
+                usage: 'Classic Rock solos, Blues-Rock, Country jams.',
+                charDegree: 'b7',
+                charDesc: 'Flat 7th removes standard major resolution, adding grit.'
+            },
+            'aeolian': {
+                name: 'Natural Minor (Aeolian)',
+                intervals: [0, 2, 3, 5, 7, 8, 10],
+                degrees: ['R', '2', 'b3', '4', '5', 'b6', 'b7'],
+                formula: '1 - 2 - b3 - 4 - 5 - b6 - b7',
+                mood: 'Emotional, Sad, Melancholic',
+                usage: 'Standard minor scale for Rock ballads, Metal, and Classical.',
+                charDegree: 'b6',
+                charDesc: 'Flat 6th drives dark emotional gravity toward the 5th.'
+            },
+            'locrian': {
+                name: 'Locrian Mode',
+                intervals: [0, 1, 3, 5, 6, 8, 10],
+                degrees: ['R', 'b2', 'b3', '4', 'b5', 'b6', 'b7'],
+                formula: '1 - b2 - b3 - 4 - b5 - b6 - b7',
+                mood: 'Tense, Unstable, Diminished',
+                usage: 'Used over m7b5 chords in Jazz and extreme Metal.',
+                charDegree: 'b5',
+                charDesc: 'Diminished 5th strips away all stability.'
+            },
+            'minor_pentatonic': {
+                name: 'Minor Pentatonic',
+                intervals: [0, 3, 5, 7, 10],
+                degrees: ['R', 'b3', '4', '5', 'b7'],
+                formula: '1 - b3 - 4 - 5 - b7',
+                mood: 'Universal Rock & Blues Lead',
+                usage: 'The most popular guitar soloing scale in history.',
+                charDegree: 'b3',
+                charDesc: 'Core minor element for versatile blues bending.'
+            },
+            'minor_blues': {
+                name: 'Minor Blues Scale',
+                intervals: [0, 3, 5, 6, 7, 10],
+                degrees: ['R', 'b3', '4', 'b5', '5', 'b7'],
+                formula: '1 - b3 - 4 - b5 - 5 - b7',
+                mood: 'Gritty, Soulful Blues',
+                usage: 'Standard blues licks, Chicago blues, Hard rock.',
+                charDegree: 'b5',
+                charDesc: 'The chromatic "Blue Note" adds classic blues tension.'
+            },
+            'major_pentatonic': {
+                name: 'Major Pentatonic',
+                intervals: [0, 2, 4, 7, 9],
+                degrees: ['R', '2', '3', '5', '6'],
+                formula: '1 - 2 - 3 - 5 - 6',
+                mood: 'Sweet, Country, Uplifting',
+                usage: 'Country guitar solos, R&B, Sweet Blues (BB King).',
+                charDegree: '3',
+                charDesc: 'Sweet major 3rd without the clashing 4th.'
+            },
+            'major_blues': {
+                name: 'Major Blues Scale',
+                intervals: [0, 2, 3, 4, 7, 9],
+                degrees: ['R', '2', 'b3', '3', '5', '6'],
+                formula: '1 - 2 - b3 - 3 - 5 - 6',
+                mood: 'Upbeat Country-Blues Stomp',
+                usage: 'Country picking, southern rock, swing blues.',
+                charDegree: 'b3',
+                charDesc: 'Passing chromatic minor 3rd into major 3rd.'
+            },
+            'harmonic_minor': {
+                name: 'Harmonic Minor',
+                intervals: [0, 2, 3, 5, 7, 8, 11],
+                degrees: ['R', '2', 'b3', '4', '5', 'b6', '7'],
+                formula: '1 - 2 - b3 - 4 - 5 - b6 - 7',
+                mood: 'Neoclassical, Gothic, Spanish',
+                usage: 'Yngwie Malmsteen shred, neoclassical metal, Flamenco.',
+                charDegree: '7',
+                charDesc: 'Major 7th creates a wide 1.5-step leap from b6.'
+            },
+            'melodic_minor': {
+                name: 'Melodic Minor (Jazz)',
+                intervals: [0, 2, 3, 5, 7, 9, 11],
+                degrees: ['R', '2', 'b3', '4', '5', '6', '7'],
+                formula: '1 - 2 - b3 - 4 - 5 - 6 - 7',
+                mood: 'Modern, Sophisticated, Altered',
+                usage: 'Jazz fusion solos, altered dominant chord substitution.',
+                charDegree: '6',
+                charDesc: 'Minor triad base combined with a major upper structure.'
+            },
+            'phrygian_dominant': {
+                name: 'Phrygian Dominant',
+                intervals: [0, 1, 4, 5, 7, 8, 10],
+                degrees: ['R', 'b2', '3', '4', '5', 'b6', 'b7'],
+                formula: '1 - b2 - 3 - 4 - 5 - b6 - b7',
+                mood: 'Exotic Middle-Eastern / Metal',
+                usage: '5th mode of Harmonic Minor. Heavy Metal & Arabic melodies.',
+                charDegree: '3',
+                charDesc: 'Major 3rd paired with flat 2nd creates instant exotic flair.'
+            }
+        };
+
+        const TUNING = [
+            { name: 'E', midi: 64 }, // High E (String 1)
+            { name: 'B', midi: 59 }, // String 2
+            { name: 'G', midi: 55 }, // String 3
+            { name: 'D', midi: 50 }, // String 4
+            { name: 'A', midi: 45 }, // String 5
+            { name: 'E', midi: 40 }  // Low E (String 6)
+        ];
+
+        const TOTAL_FRETS = 24;
+
+        // Position Fret Ranges
+        const POSITIONS = {
+            'all': [0, 24],
+            'pos1': [0, 4],
+            'pos2': [3, 7],
+            'pos3': [5, 9],
+            'pos4': [7, 11],
+            'pos5': [10, 14]
+        };
+
+        // App State
+        const state = {
+            rootPitch: 9, // Default A
+            scaleKey: 'minor_pentatonic',
+            displayMode: 'notes',
+            position: 'all',
+            tempo: 120
+        };
+
+        /**
+         * WEB AUDIO SYNTH ENGINE
+         */
+        class WebAudioSynth {
+            constructor() {
+                this.ctx = null;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContextClass();
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            playMidiNote(midiNote, duration = 0.8, timeOffset = 0) {
+                this.init();
+                const now = this.ctx.currentTime + timeOffset;
+                const freq = 440 * Math.pow(2, (midiNote - 69) / 12);
+
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(freq, now);
+
+                gain.gain.setValueAtTime(0.001, now);
+                gain.gain.linearRampToValueAtTime(0.2, now + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                osc.start(now);
+                osc.stop(now + duration);
+            }
+        }
+
+        const synth = new WebAudioSynth();
+
+        /**
+         * TAB NAVIGATION
+         */
+        function switchTab(tabId) {
+            document.querySelectorAll('.nav-tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.view-page').forEach(p => p.classList.remove('active-view'));
+
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            document.getElementById(`page-${tabId}`).classList.add('active-view');
+        }
+
+        /**
+         * FRETBOARD RENDER LOGIC
+         */
+        function renderFretNumbers() {
+            const container = document.getElementById('fret-numbers');
+            let html = '<div class="fret-number-cell nut">Nut</div>';
+            for (let f = 1; f <= TOTAL_FRETS; f++) {
+                html += `<div class="fret-number-cell">${f}</div>`;
+            }
+            container.innerHTML = html;
+        }
+
+        function renderInlays() {
+            const container = document.getElementById('inlay-layer');
+            const singleInlays = [3, 5, 7, 9, 15, 17, 19, 21];
+            const doubleInlays = [12, 24];
+
+            let html = '';
+            for (let f = 1; f <= TOTAL_FRETS; f++) {
+                html += '<div class="inlay-cell">';
+                if (singleInlays.includes(f)) {
+                    html += '<div class="inlay-dot"></div>';
+                } else if (doubleInlays.includes(f)) {
+                    html += '<div class="inlay-double"><div class="inlay-dot"></div><div class="inlay-dot"></div></div>';
+                }
+                html += '</div>';
+            }
+            container.innerHTML = html;
+        }
+
+        function renderFretboard() {
+            const scaleObj = SCALES[state.scaleKey];
+            const container = document.getElementById('strings-container');
+            const posRange = POSITIONS[state.position];
+
+            let html = '';
+
+            for (let sIdx = 0; sIdx < 6; sIdx++) {
+                const stringTuning = TUNING[sIdx];
+                const wireThickness = (sIdx + 1) * 0.5 + 1.2;
+
+                html += `<div class="string-row">`;
+                html += `<div class="string-wire" style="height: ${wireThickness}px;"></div>`;
+                html += `<div class="tuning-label">${stringTuning.name}</div>`;
+
+                for (let f = 0; f <= TOTAL_FRETS; f++) {
+                    const noteMidi = stringTuning.midi + f;
+                    const pitch = noteMidi % 12;
+
+                    // Calculate scale interval
+                    const intervalOffset = (pitch - state.rootPitch + 12) % 12;
+                    const scaleIndex = scaleObj.intervals.indexOf(intervalOffset);
+                    const isInScale = scaleIndex !== -1;
+
+                    // Check if fret is in selected position range
+                    const isInPos = (f === 0) || (f >= posRange[0] && f <= posRange[1]);
+                    const cellClass = `fret-cell ${f === 0 ? 'nut-cell' : ''} ${(!isInPos && state.position !== 'all') ? 'dimmed' : ''}`;
+
+                    html += `<div class="${cellClass}">`;
+
+                    if (isInScale) {
+                        const degLabel = scaleObj.degrees[scaleIndex];
+                        const noteName = NOTE_NAMES[pitch];
+                        const badgeText = state.displayMode === 'notes' ? noteName : degLabel;
+
+                        // Dynamic Color Coding based on Scale Degree
+                        let badgeBg = 'var(--color-gen)';
+                        if (degLabel === 'R') badgeBg = 'var(--color-root)';
+                        else if (degLabel.includes('3')) badgeBg = 'var(--color-sec3)';
+                        else if (degLabel === '5') badgeBg = 'var(--color-fifth)';
+                        else if (degLabel === 'b5' || degLabel === '#4') badgeBg = 'var(--color-blue-note)';
+                        else if (degLabel === scaleObj.charDegree) badgeBg = 'var(--color-char)';
+
+                        html += `<div class="note-badge" style="background-color: ${badgeBg};" onclick="synth.playMidiNote(${noteMidi})">${badgeText}</div>`;
+                    }
+
+                    html += `</div>`;
+                }
+
+                html += `</div>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        /**
+         * UPDATE CARD INFOS
+         */
+        function updateInfoCards() {
+            const scaleObj = SCALES[state.scaleKey];
+            const rootName = KEYS.find(k => k.pitch === state.rootPitch).name;
+
+            document.getElementById('fretboard-title').textContent = `${rootName} ${scaleObj.name}`;
+            document.getElementById('info-formula').textContent = scaleObj.formula;
+
+            // Generate pitch list
+            const noteNames = scaleObj.intervals.map(i => NOTE_NAMES[(state.rootPitch + i) % 12]);
+            document.getElementById('info-notes').textContent = `Scale Notes: ${noteNames.join(' - ')}`;
+
+            document.getElementById('info-mood').textContent = scaleObj.mood;
+            document.getElementById('info-usage').textContent = scaleObj.usage;
+
+            document.getElementById('info-char-note').textContent = `Degree: ${scaleObj.charDegree}`;
+            document.getElementById('info-char-desc').textContent = scaleObj.charDesc;
+        }
+
+        function updateApp() {
+            renderFretboard();
+            updateInfoCards();
+        }
+
+        /**
+         * AUDIO PLAYBACK ROUTINES
+         */
+        function playCurrentScale() {
+            const scaleObj = SCALES[state.scaleKey];
+            const stepDelay = 60 / state.tempo;
+            
+            let midiSequence = scaleObj.intervals.map(i => 57 + state.rootPitch + i); // Root around A3
+            midiSequence.push(57 + state.rootPitch + 12); // Octave
+
+            midiSequence.forEach((midi, idx) => {
+                synth.playMidiNote(midi, stepDelay * 0.9, idx * stepDelay);
+            });
+        }
+
+        function playCurrentArp() {
+            const scaleObj = SCALES[state.scaleKey];
+            const stepDelay = 60 / state.tempo;
+
+            // Extract 1, 3, 5, 7 degrees
+            const arpPitches = scaleObj.intervals.filter((inv, idx) => {
+                const deg = scaleObj.degrees[idx];
+                return deg === 'R' || deg.includes('3') || deg.includes('5') || deg.includes('7');
+            });
+
+            let midiSequence = arpPitches.map(i => 57 + state.rootPitch + i);
+            midiSequence.push(57 + state.rootPitch + 12);
+
+            midiSequence.forEach((midi, idx) => {
+                synth.playMidiNote(midi, stepDelay * 1.2, idx * stepDelay);
+            });
+        }
+
+        function playRiff(riffType) {
+            const now = 0;
+            if (riffType === 'blues') {
+                // A Minor Blues Lick
+                const notes = [
+                    {m:57, d:0.3, t:0.0}, {m:60, d:0.3, t:0.3}, {m:62, d:0.3, t:0.6},
+                    {m:63, d:0.2, t:0.9}, {m:65, d:0.4, t:1.1}, {m:67, d:0.6, t:1.5}
+                ];
+                notes.forEach(n => synth.playMidiNote(n.m, n.d, n.t));
+            } else if (riffType === 'dorian') {
+                // Santana Dorian Lick
+                const notes = [
+                    {m:69, d:0.3, t:0.0}, {m:67, d:0.3, t:0.3}, {m:64, d:0.3, t:0.6},
+                    {m:62, d:0.3, t:0.9}, {m:59, d:0.4, t:1.2}, {m:57, d:0.6, t:1.6}
+                ];
+                notes.forEach(n => synth.playMidiNote(n.m, n.d, n.t));
+            } else if (riffType === 'harmonic') {
+                // Malmsteen Shred Lick
+                const notes = [
+                    {m:69, d:0.15, t:0.0}, {m:65, d:0.15, t:0.15}, {m:60, d:0.15, t:0.3},
+                    {m:68, d:0.15, t:0.45}, {m:65, d:0.15, t:0.6}, {m:69, d:0.4, t:0.75}
+                ];
+                notes.forEach(n => synth.playMidiNote(n.m, n.d, n.t));
+            } else if (riffType === 'major_pent') {
+                // Country Sweet Box Lick
+                const notes = [
+                    {m:55, d:0.3, t:0.0}, {m:59, d:0.3, t:0.3}, {m:62, d:0.3, t:0.6},
+                    {m:64, d:0.3, t:0.9}, {m:67, d:0.6, t:1.2}
+                ];
+                notes.forEach(n => synth.playMidiNote(n.m, n.d, n.t));
+            }
+        }
+
+        /**
+         * INIT APP
+         */
+        window.addEventListener('DOMContentLoaded', () => {
+            // Populate Root Key Select
+            const rootSelect = document.getElementById('select-root');
+            rootSelect.innerHTML = KEYS.map(k => `<option value="${k.pitch}">${k.name}</option>`).join('');
+            rootSelect.value = state.rootPitch;
+
+            // Populate Scale Select
+            const scaleSelect = document.getElementById('select-scale');
+            scaleSelect.innerHTML = Object.keys(SCALES).map(key => `<option value="${key}">${SCALES[key].name}</option>`).join('');
+            scaleSelect.value = state.scaleKey;
+
+            // Render Base Fretboard
+            renderFretNumbers();
+            renderInlays();
+            updateApp();
+
+            // Event Listeners
+            rootSelect.addEventListener('change', (e) => {
+                state.rootPitch = parseInt(e.target.value);
+                updateApp();
+            });
+
+            scaleSelect.addEventListener('change', (e) => {
+                state.scaleKey = e.target.value;
+                updateApp();
+            });
+
+            document.getElementById('select-display').addEventListener('change', (e) => {
+                state.displayMode = e.target.value;
+                updateApp();
+            });
+
+            document.getElementById('select-position').addEventListener('change', (e) => {
+                state.position = e.target.value;
+                updateApp();
+            });
+
+            document.getElementById('btn-play-scale').addEventListener('click', playCurrentScale);
+            document.getElementById('btn-play-arp').addEventListener('click', playCurrentArp);
+
+            document.getElementById('tempo-slider').addEventListener('input', (e) => {
+                state.tempo = parseInt(e.target.value);
+                document.getElementById('lbl-bpm').textContent = `Tempo: ${state.tempo} BPM`;
+            });
+        });
+    </script>
+</body>
+</html>
